@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SHM + TMD | แบบจำลองการสั่นของอาคาร</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light;--bg:#fff;--fg:#1c1c1e;--mut:#6b6b70;--card:#f3f3f6;--A:#d9480f;--B:#1971c2;--ln:#c9c9d0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#17171a;--fg:#ececf0;--mut:#9a9aa3;--card:#232328;--A:#ff8a5c;--B:#6db3ff;--ln:#44444c}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#17171a;--fg:#ececf0;--mut:#9a9aa3;--card:#232328;--A:#ff8a5c;--B:#6db3ff;--ln:#44444c}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,"Noto Sans Thai",sans-serif}
+.w{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}p.s{color:var(--mut);margin:0 0 12px}
+.c{background:var(--card);border-radius:12px;padding:12px;margin-bottom:12px}
+canvas{width:100%;display:block}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 16px}
+.g label{display:flex;justify-content:space-between;font-size:13px}.g input{width:100%}
+button{font:inherit;padding:8px 16px;border-radius:8px;border:0;background:var(--B);color:#fff;cursor:pointer;margin-right:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:4px 6px;text-align:right}th:first-child,td:first-child{text-align:left}
+.ov{overflow-x:auto}small{color:var(--mut)}
+
+/* Academic presentation layer */
+:root{scroll-behavior:smooth}
+body{line-height:1.65}
+.w{max-width:1080px;padding:22px}
+.hero{padding:26px 24px;border-radius:16px;background:linear-gradient(135deg,#102a43,#1d4e89);color:#fff;margin-bottom:18px}
+.hero .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+.hero h1{font-size:clamp(24px,4vw,36px);line-height:1.25;margin:8px 0 10px}
+.hero p{max-width:780px;color:#e6eef7;margin:0}
+.nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 20px}
+.nav a{color:var(--B);text-decoration:none;background:var(--card);padding:7px 12px;border-radius:999px;font-size:13px}
+.section-title{font-size:21px;margin:0 0 8px}
+.lead{color:var(--mut);margin-top:0}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.info-card{background:var(--card);border-radius:12px;padding:15px}
+.info-card h3{font-size:15px;margin:0 0 6px}
+.info-card p{margin:0;font-size:14px}
+.eq{padding:12px 14px;border-left:4px solid var(--B);background:var(--card);border-radius:8px;overflow-x:auto;font-family:ui-monospace,monospace}
+.note{font-size:13px;color:var(--mut)}
+.c h2{font-size:19px;margin:0 0 8px}
+.c h3{font-size:15px;margin:12px 0 5px}
+.c ul,.c ol{padding-left:22px}
+footer{color:var(--mut);font-size:12px;text-align:center;padding:18px 4px}
+@media(max-width:600px){.w{padding:12px}.hero{padding:21px 17px}.nav{gap:6px}.nav a{font-size:12px}}
+</style></head><body><div class="w">
+<header class="hero">
+<div class="eyebrow">Engineering learning simulation</div>
+<h1>แบบจำลองการสั่นของอาคาร<br>Simple Harmonic Motion (SHM) + Tuned Mass Damper (TMD)</h1>
+<p>ศึกษาการตอบสนองเชิงพลวัตของอาคารเปรียบเทียบระหว่างระบบที่ไม่มีอุปกรณ์ลดการสั่นและระบบที่ติดตั้งมวลปรับจูน เพื่อทำความเข้าใจผลของมวล ความถี่ธรรมชาติ และการหน่วงต่อการสั่นของโครงสร้าง</p>
+</header>
+<nav class="nav" aria-label="เมนูหลัก">
+<a href="#background">หลักการ</a><a href="#model">แบบจำลอง</a><a href="#simulator">ทดลองจำลอง</a><a href="#results">การอ่านผล</a><a href="#method">วิธีทดลอง</a><a href="#limits">ข้อจำกัด</a>
+</nav>
+<section class="c" id="background">
+<h2 class="section-title">1. หลักการและทฤษฎี</h2>
+<p class="lead">การสั่นของอาคารสามารถอธิบายเบื้องต้นด้วยระบบมวล–สปริง–แดมเปอร์ ซึ่งมีแรงคืนตัวและแรงหน่วงต้านการเคลื่อนที่</p>
+<div class="info-grid">
+<div class="info-card"><h3>SHM — การเคลื่อนที่ฮาร์มอนิกอย่างง่าย</h3><p>การเคลื่อนที่กลับไปกลับมารอบตำแหน่งสมดุล โดยในแบบจำลองนี้ใช้ความถี่ของอาคารและอัตราส่วนการหน่วงเพื่อกำหนดการตอบสนอง</p></div>
+<div class="info-card"><h3>TMD — Tuned Mass Damper</h3><p>มวลเสริมที่เชื่อมกับโครงสร้างผ่านสปริงและแดมเปอร์ โดยปรับความถี่ของมวลเสริมให้ใกล้กับความถี่เป้าหมาย เพื่อช่วยลดการสั่นของโครงสร้าง</p></div>
+<div class="info-card"><h3>การเปรียบเทียบ</h3><p>ตึก A เป็นกรณีอ้างอิงที่ไม่มี TMD ส่วนตึก B เป็นกรณีที่ติดตั้ง TMD โดยเริ่มต้นด้วยสภาวะการสั่นที่กำหนดเหมือนกัน</p></div>
+</div>
+</section>
+<section id="simulator"><div class="c"><h2>3. ทดลองจำลองการสั่น</h2><p class="lead">ปรับพารามิเตอร์ด้านล่าง แล้วสังเกตการเคลื่อนที่ของอาคารและกราฟความเร่งที่เปลี่ยนแปลง</p><canvas id="cb" height="230"></canvas></div>
+<div class="c"><button id="rel">ปล่อยอีกครั้ง</button><button id="den" style="background:var(--mut)">ตั้งค่าตามทฤษฎี Den Hartog</button>
+<div class="g" id="ctl" style="margin-top:12px"></div><p id="info" class="s" style="margin:10px 0 0"></p></div>
+<div class="c"><canvas id="cp" height="220"></canvas>
+<small>ความเร่งของยอดตึก (g) เส้นประ = 0.15 g (สั่น) เส้นจุด = 0.05 g (นิ่ง) ตามเกณฑ์ hysteresis ของโครงงาน</small></div>
+<div class="c ov"><table id="tb"></table><p id="rd" style="margin:8px 0 0"></p></div>
+</div></section>
+<section class="c" id="model">
+<h2 class="section-title">2. แนวคิดของแบบจำลองทางคณิตศาสตร์</h2>
+<p>ระบบอาคารอย่างง่ายแทนด้วยมวลหลักที่มีความถี่ธรรมชาติ <i>f<sub>b</sub></i> และอัตราส่วนการหน่วง <i>ζ<sub>b</sub></i> เมื่อเพิ่ม TMD จะมีมวลเสริมที่มีอัตราส่วนมวล <i>μ</i> ความถี่ปรับจูน <i>f<sub>p</sub></i> และอัตราส่วนการหน่วง <i>ζ<sub>p</sub></i></p>
+<div class="eq">ω<sub>b</sub> = 2π f<sub>b</sub> &nbsp; | &nbsp; μ = m<sub>p</sub> / m<sub>b</sub></div>
+<div class="eq" style="margin-top:8px">f<sub>p</sub> = [ f<sub>b</sub> / (1 + μ) ] × (1 + δ)</div>
+<p class="note">δ คือค่าความคลาดเคลื่อนในการจูนในรูปทศนิยม ตามพารามิเตอร์ที่ปรับในเครื่องมือจำลอง</p>
+</section>
+<section class="c" id="results">
+<h2 class="section-title">4. การอ่านผลการจำลอง</h2>
+<ul>
+<li><b>กราฟการเคลื่อนที่:</b> แสดงการเคลื่อนที่ของอาคาร A และ B รวมถึงมวล TMD ของอาคาร B</li>
+<li><b>กราฟความเร่ง:</b> เปรียบเทียบความเร่งของยอดอาคารตามเวลา เส้นเกณฑ์แสดงระดับ 0.15 g และ 0.05 g</li>
+<li><b>Natural frequency (f<sub>n</sub>):</b> ค่าความถี่ที่ประมาณจากข้อมูลการตอบสนอง</li>
+<li><b>Settling time:</b> เวลาที่ซองสัญญาณลดจากระดับ 0.15 g ลงต่ำกว่า 0.05 g และคงอยู่ตามช่วงเวลาที่โปรแกรมกำหนด</li>
+<li><b>Logarithmic decrement และ ζ:</b> ใช้ยอดการสั่นที่ตรวจพบเพื่อประมาณอัตราส่วนการหน่วง</li>
+<li><b>RMS acceleration:</b> รากที่สองของค่าเฉลี่ยกำลังสองของความเร่ง ใช้เปรียบเทียบระดับความเร่งในช่วงเวลาที่นำมาคำนวณ</li>
+</ul>
+<p class="note">ผลลัพธ์เป็นค่าจากแบบจำลองเชิงตัวเลขและสมมติฐานในโปรแกรม ไม่ใช่ผลทดสอบอาคารจริง</p>
+</section>
+<section class="c" id="method">
+<h2 class="section-title">5. แนวทางการทดลอง</h2>
+<ol>
+<li>กำหนดความถี่ธรรมชาติและอัตราส่วนการหน่วงของอาคาร</li>
+<li>กำหนดอัตราส่วนมวลของ TMD และค่าการหน่วงของมวลเสริม</li>
+<li>กด “ปล่อยอีกครั้ง” เพื่อเริ่มการจำลอง</li>
+<li>เปลี่ยนพารามิเตอร์ทีละตัว แล้วบันทึกค่า Settling Time และ RMS acceleration</li>
+<li>เปรียบเทียบผลระหว่างอาคารที่ไม่มี TMD และมี TMD</li>
+</ol>
+</section>
+<section class="c" id="limits">
+<h2 class="section-title">6. ข้อจำกัดและข้อควรระวังในการตีความ</h2>
+<ul>
+<li>เป็นแบบจำลองสององศาอิสระอย่างง่าย ไม่ได้แทนรายละเอียดของอาคารจริงทุกประการ</li>
+<li>สมมติให้ระบบมีพฤติกรรมเชิงเส้นและใช้พารามิเตอร์คงที่ระหว่างการจำลอง</li>
+<li>การเริ่มต้นจำลองใช้เงื่อนไขเริ่มต้นตามโปรแกรม ไม่ใช่การจำลองแผ่นดินไหวจริง</li>
+<li>ความยาวลูกตุ้มเป็นค่าประมาณจากความสัมพันธ์ของลูกตุ้มอย่างง่าย ไม่ใช่ค่าก่อสร้างโดยตรง</li>
+<li>ควรพิจารณาทั้งความเร่ง การกระจัด และความไวต่อการจูนคลาดเคลื่อน ไม่ควรตัดสินจากตัวชี้วัดเพียงค่าเดียว</li>
+</ul>
+</section>
+<footer>SHM + TMD Interactive Learning Model · แบบจำลองเพื่อการศึกษา</footer>
+</div><script>
+const $=i=>document.getElementById(i),G=9.81,T=12,N=T*1000;
+const P={fb:2,zb:1.5,mu:8,dt:0,zp:15};
+const S=[['fb','ความถี่ตึก f_b (Hz)',1,4,.1],['zb','การหน่วงตึก ζ_b (%)',.5,5,.1],['mu','มวลลูกตุ้ม μ (% ของมวลตึก)',1,15,.5],['dt','จูนคลาดจากค่าเหมาะสม (%)',-30,30,1],['zp','การหน่วงลูกตุ้ม ζ_p (%)',0,40,1]];
+S.forEach(([k,n,a,b,st])=>{const l=document.createElement('label');l.innerHTML=n+' <b id="v'+k+'">'+P[k]+'</b>';const r=document.createElement('input');r.type='range';r.min=a;r.max=b;r.step=st;r.value=P[k];r.oninput=()=>{P[k]=+r.value;upd()};l.appendChild(r);$('ctl').appendChild(l);P['_'+k]=r});
+function sim(tmd){
+ const w=2*Math.PI*P.fb,z=P.zb/100,mu=P.mu/100,wp=2*Math.PI*P.fb/(1+mu)*(1+P.dt/100),zp=P.zp/100,x0=.3*G/(w*w);
+ let s=[x0,0,x0,0];
+ const f=s=>{const d=s[2]-s[0],dv=s[3]-s[1];
+  const tf=tmd?mu*(wp*wp*d+2*zp*wp*dv):0;
+  return[s[1],-w*w*s[0]-2*z*w*s[1]+tf,s[3],tmd?-wp*wp*d-2*zp*wp*dv:0]};
+ const h=.001,acc=new Float32Array(N),dx=new Float32Array(N),rl=new Float32Array(N);
+ for(let i=0;i<N;i++){
+  const k1=f(s),k2=f(s.map((q,j)=>q+h/2*k1[j])),k3=f(s.map((q,j)=>q+h/2*k2[j])),k4=f(s.map((q,j)=>q+h*k3[j]));
+  s=s.map((q,j)=>q+h/6*(k1[j]+2*k2[j]+2*k3[j]+k4[j]));
+  acc[i]=f(s)[1]/G;dx[i]=s[0]*1000;rl[i]=(s[2]-s[0])*1000}
+ return{acc,dx,rl}}
+function met(a){
+ let env=0,vib=false,bl=-1,st=null,pk=[],zc=0,t0=0,tN=0,neg=true,ss=0;const dc=Math.pow(.995,.2);
+ for(let i=0;i<N;i++){const v=a[i];env=Math.max(Math.abs(v),env*dc);
+  if(st===null){if(!vib){if(env>.15)vib=true}else if(env<.05){if(bl<0)bl=i;else if(i-bl>=500){st=bl/1000}}else bl=-1}
+  if(i>1&&a[i-1]>a[i-2]&&a[i-1]>v&&a[i-1]>.02&&pk.length<4)pk.push(a[i-1]);
+  if(neg&&v>.01){neg=false;if(!zc)t0=i;tN=i;zc++}else if(!neg&&v<-.01)neg=true}
+ let ze=null;if(pk.length>1){const d=Math.log(pk[0]/pk[pk.length-1])/(pk.length-1);ze=d/Math.sqrt(4*Math.PI*Math.PI+d*d)}
+ return{st,ze,fn:zc>1?(zc-1)*1000/(tN-t0):null}}
+function rms(a,W){let s=0;for(let i=0;i<W;i++)s+=a[i]*a[i];return Math.sqrt(s/W)}
+let A,B,mA,mB,cur=0,t0=performance.now(),raf=0;
+function upd(){
+ S.forEach(([k])=>{$('v'+k).textContent=P[k]});
+ A=sim(false);B=sim(true);mA=met(A.acc);mB=met(B.acc);
+ const mu=P.mu/100,fp=P.fb/(1+mu)*(1+P.dt/100),L=G/Math.pow(2*Math.PI*fp,2)*100,zo=Math.sqrt(3*mu/(8*Math.pow(1+mu,3)));
+ $('info').innerHTML='ความถี่ลูกตุ้ม f_p = <b>'+fp.toFixed(2)+' Hz</b> (เหมาะสม '+(P.fb/(1+mu)).toFixed(2)+' Hz) | ความยาวลูกตุ้มแบบเพนดูลัม L = <b>'+(L).toFixed(1)+' cm</b> | ζ_p ที่ทฤษฎีแนะนำ ≈ '+(zo*100).toFixed(1)+'%';
+ const W=Math.min(N,Math.round(1000*Math.max(mA.st||T,mB.st||T))),rA=rms(A.acc,W),rB=rms(B.acc,W),F=(v,d)=>v==null?'-':v.toFixed(d),Sx=m=>m.st==null?'> '+T:m.st.toFixed(2);
+ $('tb').innerHTML='<tr><th></th><th>f_n (Hz)</th><th>Settling Time (s)</th><th>ζ (จาก log decrement)</th><th>RMS ความเร่ง (g)</th></tr>'+
+ '<tr><td style="color:var(--A)">ตึก A (ไม่มี TMD)</td><td>'+F(mA.fn,2)+'</td><td>'+Sx(mA)+'</td><td>'+F(mA.ze,3)+'</td><td>'+rA.toFixed(3)+'</td></tr>'+
+ '<tr><td style="color:var(--B)">ตึก B (มี TMD)</td><td>'+F(mB.fn,2)+'</td><td>'+Sx(mB)+'</td><td>'+F(mB.ze,3)+'</td><td>'+rB.toFixed(3)+'</td></tr>';
+ const rs=(mA.st&&mB.st)?(1-mB.st/mA.st)*100:null;
+ $('rd').innerHTML='Settling Time ลดลง <b>'+(rs==null?'-':rs.toFixed(0)+'%')+'</b> | RMS ลดลง <b>'+((1-rB/rA)*100).toFixed(0)+'%</b> (ช่วงเวลาเดียวกัน)';
+ go()}
+function go(){cancelAnimationFrame(raf);t0=performance.now();raf=requestAnimationFrame(fr)}
+function fr(n){const t=(n-t0)/1000;cur=Math.max(0,Math.min(N-1,Math.floor(t*1000)));draw();if(t<T)raf=requestAnimationFrame(fr)}
+function cv(id){const c=$(id);if(!c.dataset.h)c.dataset.h=c.getAttribute('height');const d=devicePixelRatio||1,w=c.clientWidth,h=+c.dataset.h;c.style.height=h+'px';if(c.width!==Math.round(w*d)||c.height!==Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d)}const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return[x,w,h]}
+function draw(){
+ const cs=getComputedStyle(document.documentElement),C=k=>cs.getPropertyValue(k).trim();
+ let[x,w,h]=cv('cb');const gy=h-30,H=150,bw=70,sc=2;x.font='13px system-ui';x.textAlign='center';
+ x.strokeStyle=C('--ln');x.beginPath();x.moveTo(10,gy);x.lineTo(w-10,gy);x.stroke();
+ [[A,.27,'--A','ตึก A (ไม่มี TMD)',false],[B,.73,'--B','ตึก B (มี TMD)',true]].forEach(([s,p,c,n,t])=>{
+  const cx=w*p,o=s.dx[cur]*sc;x.fillStyle=C(c);x.globalAlpha=.85;x.beginPath();x.moveTo(cx-bw/2,gy);x.lineTo(cx+bw/2,gy);x.lineTo(cx+bw/2+o,gy-H);x.lineTo(cx-bw/2+o,gy-H);x.closePath();x.fill();x.globalAlpha=1;
+  if(t){const bx=cx+o+s.rl[cur]*sc;x.fillStyle=C('--fg');x.fillRect(bx-16,gy-H-16,32,16)}
+  x.fillStyle=C('--fg');x.fillText(n,cx,h-8)});
+ [x,w,h]=cv('cp');const l=40,r=8,tp=8,b=24,pw=w-l-r,ph=h-tp-b,Y=v=>tp+ph/2-v/.35*ph/2,X=i=>l+i/N*pw;
+ x.font='11px system-ui';x.fillStyle=C('--mut');x.strokeStyle=C('--ln');x.textAlign='right';
+ [-.3,-.15,0,.15,.3].forEach(v=>{x.beginPath();x.moveTo(l,Y(v));x.lineTo(l+pw,Y(v));x.stroke();x.fillText(v.toFixed(2),l-4,Y(v)+4)});
+ x.textAlign='center';for(let s=0;s<=T;s+=2)x.fillText(s+' s',X(s*1000),h-8);
+ [[.15,[6,4]],[-.15,[6,4]],[.05,[2,3]],[-.05,[2,3]]].forEach(([v,d])=>{x.setLineDash(d);x.strokeStyle=C('--mut');x.beginPath();x.moveTo(l,Y(v));x.lineTo(l+pw,Y(v));x.stroke()});x.setLineDash([]);
+ [[A.acc,'--A'],[B.acc,'--B']].forEach(([a,c])=>{x.strokeStyle=C(c);x.lineWidth=1.5;x.beginPath();for(let i=0;i<N;i+=4){i?x.lineTo(X(i),Y(a[i])):x.moveTo(X(i),Y(a[i]))}x.stroke()});x.lineWidth=1;
+ x.strokeStyle=C('--fg');x.beginPath();x.moveTo(X(cur),tp);x.lineTo(X(cur),tp+ph);x.stroke()}
+$('rel').onclick=go;
+$('den').onclick=()=>{P.dt=0;P.zp=Math.round(Math.sqrt(3*P.mu/100/(8*Math.pow(1+P.mu/100,3)))*100);S.forEach(([k])=>P['_'+k].value=P[k]);upd()};
+addEventListener('resize',draw);matchMedia('(prefers-color-scheme:dark)').addEventListener('change',draw);
+upd();
+</script></body></html>
